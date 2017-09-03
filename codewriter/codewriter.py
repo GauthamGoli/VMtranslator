@@ -17,11 +17,11 @@ class CodeWriter:
         if command == 'C_POP':
             if segment in ['local', 'argument', 'this','that']:
                 segment_pointer = segment_names[segment]
-                command_seq = ['@{}'.format(index), 'D=A', '@{}'.format(segment_pointer), 'D=D+M', '@SP', 'M=M-1','A=M','M=D'] 
+                command_seq = ['@{}'.format(index), 'D=A', '@{}'.format(segment_pointer), 'D=D+M', '@R13','M=D', '@SP', 'M=M-1','A=M','D=M','@R13', 'A=M','M=D']
             elif segment == 'static':
-                command_seq = ['@SP', 'M=M-1', 'A=M', 'D=A', '@{}.{}'.format(self.filename, index), 'M=D']
+                command_seq = ['@SP', 'M=M-1', 'A=M', 'D=M', '@{}.{}'.format(self.filename, index), 'M=D']
             elif segment == 'temp':
-                command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
+                command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@R13', 'M=D', '@SP','M=M-1', 'A=M', 'D=M','@R13','A=M','M=D']
             elif segment == 'pointer':
                 if index == 0:
                     pointer = 'THIS'
@@ -52,9 +52,9 @@ class CodeWriter:
 
     def writeArithmetic(self, command):
         if command == 'add':
-            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D+M','M=D']
+            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D+M','M=D', '@SP', 'M=M+1']
         elif command == 'sub':
-            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D-M','M=D']
+            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=M-D','M=D', '@SP', 'M=M+1']
         elif command == 'neg':
             command_seq = ['@SP','D=M-1','A=D','M=-M']
         elif command == 'eq':
