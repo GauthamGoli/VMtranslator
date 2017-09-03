@@ -13,6 +13,6 @@ else:
 	writer = CodeWriter(output_path)
 	while(parser.hasMoreCommands()):
 		parser.advance()
-		writer.writeCommand(parser.commandType, parser.arg1, parser.arg2)
+		writer.writeCommand(parser.commandType(), parser.arg1(), parser.arg2())
 	writer.close()
 	print "Translation finished"

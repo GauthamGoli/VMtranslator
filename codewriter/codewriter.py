@@ -15,37 +15,39 @@ class CodeWriter:
                        }
 
         if command == 'C_POP':
-            if segment in ['local', 'argument', 'this',' that']:
-                segment_pointer = segment_name[segment]
+            if segment in ['local', 'argument', 'this','that']:
+                segment_pointer = segment_names[segment]
                 command_seq = ['@{}'.format(index), 'D=A', '@{}'.format(segment_pointer), 'D=D+M', '@SP', 'M=M-1','A=M','M=D'] 
             elif segment == 'static':
                 command_seq = ['@SP', 'M=M-1', 'A=M', 'D=A', '@{}.{}'.format(self.filename, index), 'M=D']
             elif segment == 'temp':
                 command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
-            elif segment == 'this':
+            elif segment == 'pointer':
                 if index == 0:
                     pointer = 'THIS'
                 else:
                     pointer = 'THAT'
                 command_seq = ['@SP', 'M=M-1', 'A=M', 'D=M', '@{}'.format(pointer), 'A=M', 'M=D']
 
-            command_seq.append('// POP {} {}\n'.format(semgent, index))
+            command_seq.append('// POP {} {}\n'.format(segment, index))
             self.writeLines(command_seq)
 
         elif command == 'C_PUSH':
-            if segment == 'constant':
+            if segment in ['local', 'argument', 'this', 'that']:
+                segment_pointer = segment_names[segment]
+                command_seq = ['@{}'.format(index), 'D=A', '@{}'.format(segment_pointer), 'D=D+M','A=D','D=M', '@SP', 'A=M','M=D','@SP','M=M+1']
+            elif segment == 'constant':
                 command_seq = ['@{}'.format(index), 'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
-                command_seq.append('// PUSH CONST {}\n'.format(index))
             elif segment == 'temp':
                 command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@SP', 'M=M-1', 'A=M', 'M=D']
-            elif segment == 'this':
+            elif segment == 'pointer':
                 if index == 0:
                     pointer = 'THIS'
                 else:
                     pointer = 'THAT'
                 command_seq = ['@SP', 'A=M', 'M={}'.format(pointer), '@SP', 'M+1']
 
-            command_seq.append('// PUSH {} {}\n'.format(semgent, index))
+            command_seq.append('// PUSH {} {}\n'.format(segment, index))
             self.writeLines(command_seq)
 
     def writeArithmetic(self, command):
@@ -73,14 +75,14 @@ class CodeWriter:
         command_seq.append('// {}\n'.format(command))
         self.writeLines(command_seq)
 
-    def writeCommand(self, type, arg1, arg2)
-        if type in ['C_PUSH','C_POP']:
-            self.writePushPop(type, arg1, arg2)
-        elif type in ['C_ARITHMETIC']:
+    def writeCommand(self, c_type, arg1, arg2):
+        if c_type in ['C_PUSH','C_POP']:
+            self.writePushPop(c_type, arg1, arg2)
+        elif c_type in ['C_ARITHMETIC']:
             self.writeArithmetic(arg1)
 
     def writeLines(self, command_seq):
-        self.writeObj.write(command_seq.join('\n'))
+        self.writerObj.write('\n'.join(command_seq))
 
     def close(self):
         self.writerObj.close()

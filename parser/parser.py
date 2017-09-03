@@ -1,19 +1,20 @@
 class Parser:
     def __init__(self, filepath):
         file_pointer = open(filepath)
-        self.lines = file_pointer.readlines().reverse()
+        self.lines = file_pointer.readlines()
+        self.lines.reverse()
 
     def hasMoreCommands(self):
         return len(self.lines)>0
 
     def advance(self):
-        if(self.hasMoreCommands):
+        if(self.hasMoreCommands()):
             self.currentCommand = self.lines.pop()
             self.tokenize()
         return
 
     def tokenize(self):
-        self.command_tokens = self.currentCommand.split()
+        self.command_tokens = self.currentCommand.strip().split()
 
     def strip_comments(self):
         # Incomplete
@@ -25,7 +26,7 @@ class Parser:
         except:
             return None
 
-        if operation in ['add','sub', .. ]:
+        if operation in ['add','sub', 'neg', 'eq','gt','lt','and','or','not' ]:
             return 'C_ARITHMETIC'
         elif operation == 'push':
             return 'C_PUSH'
@@ -33,13 +34,13 @@ class Parser:
             return 'C_POP'
 
     def arg1(self):
-        if self.commandType == 'C_ARITHMETIC':
+        if self.commandType() == 'C_ARITHMETIC':
             return self.command_tokens[0] 
-        elif self.commandType in ['C_PUSH','C_POP']:
+        elif self.commandType() in ['C_PUSH','C_POP']:
             return self.command_tokens[1]
 
     def arg2(self):
-        if self.commandType in ['C_PUSH', 'C_POP']:
+        if self.commandType() in ['C_PUSH', 'C_POP']:
             return self.command_tokens[2]
         else:
             return None
