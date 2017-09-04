@@ -23,11 +23,11 @@ class CodeWriter:
             elif segment == 'temp':
                 command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@R13', 'M=D', '@SP','M=M-1', 'A=M', 'D=M','@R13','A=M','M=D']
             elif segment == 'pointer':
-                if index == 0:
+                if index == '0':
                     pointer = 'THIS'
                 else:
                     pointer = 'THAT'
-                command_seq = ['@SP', 'M=M-1', 'A=M', 'D=M', '@{}'.format(pointer), 'A=M', 'M=D']
+                command_seq = ['@SP', 'M=M-1', 'A=M', 'D=M', '@{}'.format(pointer), 'M=D']
 
             command_seq.append('// POP {} {}\n'.format(segment, index))
             self.writeLines(command_seq)
@@ -43,11 +43,11 @@ class CodeWriter:
             elif segment == 'temp':
                 command_seq = ['@{}'.format(index), 'D=A', '@5', 'A=D+A', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
             elif segment == 'pointer':
-                if index == 0:
+                if index == '0':
                     pointer = 'THIS'
                 else:
                     pointer = 'THAT'
-                command_seq = ['@SP', 'A=M', 'M={}'.format(pointer), '@SP', 'M+1']
+                command_seq = ['@{}'.format(pointer), 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
 
             command_seq.append('// PUSH {} {}\n'.format(segment, index))
             self.writeLines(command_seq)
