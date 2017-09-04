@@ -39,7 +39,7 @@ class CodeWriter:
             elif segment == 'constant':
                 command_seq = ['@{}'.format(index), 'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
             elif segment == 'temp':
-                command_seq = ['@{}'.format(index), 'D=A', '@5', 'D=D+A', '@SP', 'M=M-1', 'A=M', 'M=D']
+                command_seq = ['@{}'.format(index), 'D=A', '@5', 'A=D+A', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
             elif segment == 'pointer':
                 if index == 0:
                     pointer = 'THIS'
@@ -52,11 +52,11 @@ class CodeWriter:
 
     def writeArithmetic(self, command):
         if command == 'add':
-            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D+M','M=D', '@SP', 'M=M+1']
+            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','M=D+M', '@SP', 'M=M+1']
         elif command == 'sub':
-            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=M-D','M=D', '@SP', 'M=M+1']
+            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','M=M-D', '@SP', 'M=M+1']
         elif command == 'neg':
-            command_seq = ['@SP','D=M-1','A=D','M=-M']
+            command_seq = ['@SP','A=M-1','M=-M']
         elif command == 'eq':
             command_seq = ['@SP','M=M-1','A=M', 'D=M', '@SP', 'M=M-1', 'A=M', 'D=D-M','M=!D','D=0', 'D=!D', 'M=D&M', '@SP', 'M=M+1']
         elif command == 'and':
