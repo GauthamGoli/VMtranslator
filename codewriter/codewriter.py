@@ -1,10 +1,10 @@
 import os
-import time
 
 class CodeWriter:
     def __init__(self, outputPath):
         self.writerObj = open(outputPath, 'a')
         self.filename = os.path.basename(outputPath)
+        self.unique_seq_key = 1
 
     def writePushPop(self, command, segment, index):
         segment_names = {
@@ -64,14 +64,14 @@ class CodeWriter:
         elif command == 'and':
             command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D&M','M=D', '@SP','M=M+1']
         elif command == 'or':
-            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D!M','M=D', '@SP','M=M+1']
+            command_seq = ['@SP','M=M-1','A=M','D=M','@SP','M=M-1','A=M','D=D|M','M=D', '@SP','M=M+1']
         elif command == 'not':
             command_seq = ['@SP','M=M-1','A=M','M=!M','@SP','M=M+1']
         elif command == 'lt':
-            unique_label = int(time.time())
+            unique_label = self.unique_seq_key
             command_seq = ['@SP', 'M=M-1','A=M','D=M','@SP','M=M-1','A=M','@lt{}lt'.format(unique_label),'D=D-M;JLT','@nlt{}nlt'.format(unique_label),'0;JMP','(lt{}lt)'.format(unique_label),'@SP','A=M','D=0','M=!D','(nlt{}nlt)'.format(unique_label),'@SP','A=M','D=1','M=!D']
         elif command == 'gt':
-            unique_label = int(time.time())
+            unique_label = self.unique_seq_key
             command_seq = ['@SP', 'M=M-1','A=M','D=M','@SP','M=M-1','A=M','@gt{}gt'.format(unique_label),'D=D-M;JGT','@ngt{}ngt'.format(unique_label),'0;JMP','(gt{}gt)'.format(unique_label),'@SP','A=M','D=0','M=!D','(ngt{}ngt)'.format(unique_label),'@SP','A=M','D=1','M=!D']
 
         command_seq.append('// {}\n'.format(command))
@@ -82,6 +82,8 @@ class CodeWriter:
             self.writePushPop(c_type, arg1, arg2)
         elif c_type in ['C_ARITHMETIC']:
             self.writeArithmetic(arg1)
+
+        self.unique_seq_key += 1
 
     def writeLines(self, command_seq):
         self.writerObj.write('\n'.join(command_seq))
