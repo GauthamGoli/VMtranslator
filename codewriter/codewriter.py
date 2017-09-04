@@ -36,6 +36,8 @@ class CodeWriter:
             if segment in ['local', 'argument', 'this', 'that']:
                 segment_pointer = segment_names[segment]
                 command_seq = ['@{}'.format(index), 'D=A', '@{}'.format(segment_pointer), 'D=D+M','A=D','D=M', '@SP', 'A=M','M=D','@SP','M=M+1']
+            elif segment == 'static':
+                command_seq = ['@{}.{}'.format(self.filename, index), 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
             elif segment == 'constant':
                 command_seq = ['@{}'.format(index), 'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1']
             elif segment == 'temp':
