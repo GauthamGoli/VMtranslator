@@ -3,8 +3,25 @@ import os
 class CodeWriter:
     def __init__(self, outputPath):
         self.writerObj = open(outputPath, 'a')
-        self.filename = os.path.basename(outputPath)
         self.unique_seq_key = 1
+
+    def setFileName(self, fileName):
+        self.filename = os.path.basename(fileName)
+
+    def writeLabel(self, label):
+        command_seq = ['({})'.format(label)]
+        command_seq.append('// label decleration\n')
+        self.writeLines(command_seq)
+
+    def writeGoto(self, label):
+        command_seq = ['@{}'.format(label), '0;JMP']
+        command_seq.append('//goto jmp\n')
+        self.writeLines(command_seq)
+
+    def writeIf(self, label):
+        command_seq = ['@SP', 'M=M-1','A=M', 'D=M', '@{}false'.format(label), 'D;JEQ', '@{}'.format(label), '0;JMP', '({}false)'.format(label)]
+        command_seq.append('// if-goto jmp\n')
+        self.writeLines(command_seq)
 
     def writePushPop(self, command, segment, index):
         segment_names = {
@@ -81,6 +98,12 @@ class CodeWriter:
             self.writePushPop(c_type, arg1, arg2)
         elif c_type in ['C_ARITHMETIC']:
             self.writeArithmetic(arg1)
+        elif c_type in ['C_LABEL']:
+            self.writeLabel(arg1)
+        elif c_type in ['C_GOTO']:
+            self.writeGoto(arg1)
+        elif c_type in ['C_IFGOTO']:
+            self.writeIf(arg1)
 
         self.unique_seq_key += 1
 

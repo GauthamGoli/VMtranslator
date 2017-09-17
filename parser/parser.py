@@ -32,11 +32,17 @@ class Parser:
             return 'C_PUSH'
         elif operation == 'pop':
             return 'C_POP'
+        elif operation == 'label':
+            return 'C_LABEL'
+        elif operation == 'goto':
+            return 'C_GOTO'
+        elif operation == 'if-goto':
+            return 'C_IFGOTO'
 
     def arg1(self):
         if self.commandType() == 'C_ARITHMETIC':
             return self.command_tokens[0] 
-        elif self.commandType() in ['C_PUSH','C_POP']:
+        elif self.commandType() in ['C_PUSH','C_POP','C_LABEL','C_GOTO','C_IFGOTO']:
             return self.command_tokens[1]
 
     def arg2(self):
