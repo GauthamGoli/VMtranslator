@@ -3,6 +3,7 @@ class Parser:
         file_pointer = open(filepath)
         self.lines = file_pointer.readlines()
         self.lines.reverse()
+        self.strip_comments()
 
     def hasMoreCommands(self):
         return len(self.lines)>0
@@ -17,8 +18,13 @@ class Parser:
         self.command_tokens = self.currentCommand.strip().split()
 
     def strip_comments(self):
-        # Incomplete
-        self.currentCommand = self.currentCommand.index('//')
+        strippedLines = []
+        for line in self.lines[:]:
+            try:
+                strippedLines.append(line[:line.index('//')].rstrip())
+            except:
+                strippedLines.append(line.strip())
+        self.lines = [line for line in strippedLines if line]
 
     def commandType(self):
         try:
@@ -38,15 +44,21 @@ class Parser:
             return 'C_GOTO'
         elif operation == 'if-goto':
             return 'C_IFGOTO'
+        elif operation == 'function':
+            return 'C_FUNCTION'
+        elif operation == 'call':
+            return 'C_CALL'
+        elif operation == 'return':
+            return 'C_RETURN'
 
     def arg1(self):
-        if self.commandType() == 'C_ARITHMETIC':
+        if self.commandType() in ['C_ARITHMETIC', 'C_RETURN']:
             return self.command_tokens[0] 
-        elif self.commandType() in ['C_PUSH','C_POP','C_LABEL','C_GOTO','C_IFGOTO']:
+        elif self.commandType() in ['C_PUSH','C_POP','C_LABEL','C_GOTO','C_IFGOTO', 'C_FUNCTION', 'C_CALL']:
             return self.command_tokens[1]
 
     def arg2(self):
-        if self.commandType() in ['C_PUSH', 'C_POP']:
+        if self.commandType() in ['C_PUSH', 'C_POP', 'C_FUNCTION', 'C_CALL']:
             return self.command_tokens[2]
         else:
             return None

@@ -4,23 +4,86 @@ class CodeWriter:
     def __init__(self, outputPath):
         self.writerObj = open(outputPath, 'a')
         self.unique_seq_key = 1
+        self.currentFunction = None
+        # Keeps track of number of function `call`s inside a function for generating labels accordingly
+        self.currentFunctionCallIndex = None
 
     def setFileName(self, fileName):
-        self.filename = os.path.basename(fileName)
+        self.filename = os.path.basename(fileName).strip('.vm')
+
+    def setCurrentFunction(self, functionName=None, functionCallIndex=None):
+        self.currentFunction = functionName
+        self.currentFunctionCallIndex = functionCallIndex
+
+    def writeInit(self):
+        command_seq = ['@256', 'D=A', '@SP', 'M=D']
+        command_seq.append('// SP=256\n')
+        self.writeLines(command_seq)
+        self.setCurrentFunction('bootsrap', 0)
+        self.writeCall('Sys.init', 0)
+        self.setCurrentFunction()
 
     def writeLabel(self, label):
-        command_seq = ['({})'.format(label)]
+        if self.currentFunction is None:
+            command_seq = ['({})'.format(label)]
+        else:
+            command_seq = ['({}${})'.format(self.currentFunction, label)]
         command_seq.append('// label decleration\n')
         self.writeLines(command_seq)
 
     def writeGoto(self, label):
-        command_seq = ['@{}'.format(label), '0;JMP']
+        if self.currentFunction is None:
+            command_seq = ['@{}'.format(label), '0;JMP']
+        else:
+            command_seq = ['@{}${}'.format(self.currentFunction, label) , '0;JMP']
         command_seq.append('//goto jmp\n')
         self.writeLines(command_seq)
 
     def writeIf(self, label):
-        command_seq = ['@SP', 'M=M-1','A=M', 'D=M', '@{}false'.format(label), 'D;JEQ', '@{}'.format(label), '0;JMP', '({}false)'.format(label)]
+        if self.currentFunction is None:
+            labelName = label
+        else:
+            labelName = '{}${}'.format(self.currentFunction, label)
+        command_seq = ['@SP', 'M=M-1','A=M', 'D=M', '@{}false'.format(labelName), 'D;JEQ', '@{}'.format(labelName), '0;JMP', '({}false)'.format(labelName)]
         command_seq.append('// if-goto jmp\n')
+        self.writeLines(command_seq)
+
+    def writeCall(self, functionName, nArgs):
+        returnAddrLabelName = '{}$ret.{}'.format(self.currentFunction,
+                                                 self.currentFunctionCallIndex)
+        self.currentFunctionCallIndex += 1
+        command_seq = ['@{}'.format(returnAddrLabelName), 'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1'] #push returnAddr
+        command_seq += ['@LCL', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1'] #push LCL
+        command_seq += ['@ARG', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1'] #push ARG
+        command_seq += ['@THIS', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1'] #push THIS
+        command_seq += ['@THAT', 'D=M', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1'] #push THAT
+        command_seq += ['@SP', 'D=M','@5', 'D=D-A','@{}'.format(nArgs), 'D=D-A', '@ARG', 'M=D'] #ARG = SP-5-nArgs
+        command_seq += ['@SP', 'D=M', '@LCL', 'M=D'] #LCL=SP
+        command_seq += ['@{}'.format(functionName), '0;JMP'] #goto functionName
+        command_seq += ['({})'.format(returnAddrLabelName)]
+        command_seq.append('// writeCall \n')
+        self.writeLines(command_seq)
+
+    def writeFunction(self, functionName, nVars):
+        self.setCurrentFunction(functionName, 0)
+        self.returnAddrLabelName = '{}$ret.{}'.format(self.currentFunction, self.currentFunctionCallIndex)
+        command_seq = ['({})'.format(functionName)]
+        for x in range(nVars):
+            command_seq += ['@SP', 'A=M', 'M=0', '@SP', 'M=M+1']
+        command_seq.append('// writeFunction\n')
+        self.writeLines(command_seq)
+
+    def writeReturn(self):
+        command_seq = ['@LCL', 'D=M', '@R14', 'M=D'] #R14(endFrame) = LCL
+        command_seq += ['@R14', 'D=M', '@5', 'D=D-A','A=D', 'D=M', '@R13', 'M=D'] #returnAddr to R13
+        command_seq += ['@SP', 'A=M-1', 'D=M', '@ARG', 'A=M', 'M=D'] #reposition return value for caller
+        command_seq += ['@ARG', 'D=M+1', '@SP', 'M=D'] #reposition SP
+        command_seq += ['@R14', 'A=M-1','D=M', '@THAT', 'M=D'] # reposition THAT
+        command_seq += ['@R14', 'D=M', '@2', 'D=D-A','A=D','D=M', '@THIS', 'M=D'] #repostion THIS
+        command_seq += ['@R14', 'D=M', '@3', 'D=D-A','A=D','D=M', '@ARG', 'M=D'] #reposition ARG
+        command_seq += ['@R14', 'D=M', '@4', 'D=D-A','A=D','D=M', '@LCL', 'M=D'] #repostion LCL
+        command_seq += ['@R13', 'A=M', '0;JMP'] # Goto returnAddr
+        command_seq.append('// writeReturn\n')
         self.writeLines(command_seq)
 
     def writePushPop(self, command, segment, index):
@@ -104,6 +167,12 @@ class CodeWriter:
             self.writeGoto(arg1)
         elif c_type in ['C_IFGOTO']:
             self.writeIf(arg1)
+        elif c_type in ['C_FUNCTION']:
+            self.writeFunction(arg1, int(arg2) if arg2 else arg2)
+        elif c_type in ['C_RETURN']:
+            self.writeReturn()
+        elif c_type in ['C_CALL']:
+            self.writeCall(arg1, int(arg2) if arg2 else arg2)
 
         self.unique_seq_key += 1
 
